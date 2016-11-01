@@ -361,8 +361,8 @@ class CFNode():
     #@param e the entry to be inserted
     #@return TRUE if the new entry could be inserted without problems, otherwise we need to split the node
     def insertEntry(self, e):
-        if entries.size()==0: #if the node is empty we can insert the entry directly here
-            entries.add(e)
+        if len(self.entries)==0: #if the node is empty we can insert the entry directly here
+            self.entries.append(e)
             return True #insert was successful, no split necessary
             
         closest=CFEntry()
@@ -860,23 +860,23 @@ class CFTree():
         #the split happens by finding the two entries in this node that are the most far apart
         #we then use these two entries as a "pivot" to redistribute the old entries 
         p=CFEntryPair()
-        p=root.findFarthestEntryPair(root.getEntries())
+        p=self.root.findFarthestEntryPair(self.root.getEntries())
         
         newEntry1=CFEntry()
-        newNode1=CFNode(root.getMaxNodeEntries(), root.getDistThreshold, root.getDistFunction, root.applyMergingRefinement, root.isLeaf())
+        newNode1=CFNode(self.root.getMaxNodeEntries(), self.root.getDistThreshold, self.root.getDistFunction, self.root.applyMergingRefinement, self.root.isLeaf())
         newEntry1.setChild(newNode1)
         
         newEntry2=CFEntry()
-        newNode2=CFNode(root.getMaxNodeEntries(), root.getDistThreshold, root.getDistFunction, root.applyMergingRefinement, root.isLeaf())
+        newNode2=CFNode(self.root.getMaxNodeEntries(), self.root.getDistThreshold, self.root.getDistFunction, self.root.applyMergingRefinement, self.root.isLeaf())
         newEntry2.setChild(newNode2)
         
         #the new root that hosts the new entries
-        newRoot=CFNode(root.getMaxNodeEntries, root.getDistThreshold, root.getDistFunction, root.applyMergingRefinement, false)
+        newRoot=CFNode(self.root.getMaxNodeEntries, self.root.getDistThreshold, self.root.getDistFunction, self.root.applyMergingRefinement, false)
         newRoot.addToEntryList(newEntry1)
         newRoot.addToEntryList(newEntry2)
         
         #this updates the pointers to the list of leaves
-        if root.isLeaf(): #if root was a leaf
+        if self.root.isLeaf(): #if root was a leaf
                 leafListStart.setNextLeaf(newNode1)
                 newNode1.setPreviousLeaf(leafListStart)
                 newNode1.setNextLeaf(newNode2)
@@ -884,10 +884,10 @@ class CFTree():
             
         #redistributes the entries in the root between newEntry1 and newEntry2
         #according to the distance to p.e1 and p.e2
-        root.redistributeEntries(root.getEntries(), p, newEntry1, newEntry2)
+        self.root.redistributeEntries(self.root.getEntries(), p, newEntry1, newEntry2)
         
         #updates the root
-        root=newRoot
+        self.root=newRoot
         
         #frees some memory by deleting the nodes in the tree that had to be split
         gc.collect()
@@ -1047,7 +1047,7 @@ class CFTree():
     #@return a positive integer, if the leaf entries were enumerated using finishedInsertingData(), otherwise -1
     def mapToClosetSubcluster(x):
         e=CFEntry(x)
-        return root.mapToClosetSubcluster(e)
+        return self.root.mapToClosetSubcluster(e)
         
     #Computes an estimate of the cost of running an o(n^2) algorithm to split each subcluster in more fine-grained clusters
     #@return sqrt(sum_i[(n_i)^2]), where n_i is the number of members of the i-th subcluster
@@ -1066,22 +1066,22 @@ class CFTree():
         return math.sqrt(lambdaSS)
         
     #prints the CFTree
-    def printCFTree():
-        print(root)
+    def printCFTree(self):
+        print self.root
         
     #counts the nodes of the tree (including leaves)
     #@return the number of nodes in the tree
-    def countNodes():
+    def countNodes(self):
         n=1 #at least root has to be present
-        n += root.countChildrenNodes()
+        n += self.root.countChildrenNodes()
         
         return n
         
     #counts the number of CFEntries in the tree
     #@return the number of entries in the tree
-    def countEntries():
-        n=root.size() #at least root has to be present
-        n += root.countEntriesInChildrenNodes()
+    def countEntries(self):
+        n=len(self.root) #at least root has to be present
+        n += self.root.countEntriesInChildrenNodes()
         
         return n
         
@@ -1093,7 +1093,7 @@ class CFTree():
         l=leafListStart.getNextLeaf()
         while l!=null:
             if not l.isDummy():
-                i += l.size()
+                i += len(l)
                 
             l=l.getNextLeaf()
             
@@ -1110,18 +1110,18 @@ class CFTree():
             if not l.isDummy():
                 print(l)
                 for e in range(l.getEntries()):
-                    indexes.addAll(e.getIndexList())
+                    indexes.append(e.getIndexList())
             l=l.getNextLeaf()
         
         v=indexes.toArray(integer[0])
         Arrays.sort(v)
-        print("Num of Indexes=" + v.length)
+        print("Num of Indexes=" + len(v))
         print(Arrays.toString(v))
         
     #prints the index of the pattern vectors in each leaf entry (i.e. each subcluster)
-    def printLeafEntries():
+    def printLeafEntries(self):
         i=0
-        l=CFNode()
+        #l=CFNode()
         l=leafListStart.getNextLeaf()
         e=CFEntry()
         while l!=null:
@@ -1151,18 +1151,18 @@ if __name__ == '__main__':
     line = ''
 
     #pdb.set_trace()
-    #while (line == input.readline())!=None:
-    line == input.readline()
-    tmp = line.split(",")
-        
-    x = [len(tmp)]
-    for i in range(0, len(x)):
-        x[i] = tmp[i]
-        
-        inserted = birchTree.insertEntry(x)
-        if not inserted:
-            print("NOT INSERTED!")
-            exit()
+    while (line == input.readline())!=None:
+        line == input.readline()
+        tmp = line.split(",")
+            
+        x = [len(tmp)]
+        for i in range(0, len(x)):
+            x[i] = tmp[i]
+            
+            inserted = birchTree.insertEntry(x)
+            if not inserted:
+                print("NOT INSERTED!")
+                exit()
         
     
     print("*************************************************")
