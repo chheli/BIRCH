@@ -8,6 +8,7 @@ import math
 import pdb
 import numpy as np
 import sys
+import gc
 
 class CFEntry():
     
@@ -15,11 +16,10 @@ class CFEntry():
     n=0 #number of patterns summarized by this entry
     sumX=[] #array sumX
     sumX2=[] #array sumX2
-    child=0 #CFNode()
+    #child=0 #CFNode()
     indexList=list() #list indexList
     subclusterID=-1 # the unique id that describes a subcluster (valid only for leaf entries)
     
-    #constructor
     def __init__(self, x=None, index=None):
         if x is None and index is None:
             pass
@@ -28,12 +28,14 @@ class CFEntry():
             self(x, 0)
         elif x is not None and index is not None:
             self.n=1
-            #self.sumX=len(x)
-            for i in range(0, len(x)):
-                self.sumX.append(x[i])
-            #self.sumX2=len(x)
-            for i in range(0, len(x)):
-                self.sumX2.append(x[i])
+            
+            self.sumX=len(x)
+            for i in range(len(x)):
+                CFEntry.sumX = x[i]
+                
+            self.sumX2=len(x)
+            for i in range(len(CFEntry.sumX2)):
+                CFEntry.sumX2=x[i]*x[i]
 
             indexList=list()
             indexList.append(index)
@@ -48,88 +50,94 @@ class CFEntry():
         self.sumX2=e.sumX2
         self.child=e.child
         self.indexList=list()
-        for i in range(0, e.getIndexList()):
+        for i in range(len(e.getIndexList())):
             self.indexList.append(i)
             
-    def getIndexList(self):
-        return self.indexList
+    def getIndexList():
+        return CFEntry.indexList
     #boolean function   
     def hasChild(self):
-        return bool(self.child)
+        CFEntry.child=CFNode()
+        return bool(CFEntry.child!=None)
     
-    def getChlid(self):
-        return self.child
+    def getChild(self):
+        return CFEntry.child
     
     def getChildSize(self):
-        return self.child.getEntries().size()
+        return len(CFEntry.child.getEntries())
     
-    def setChild(self, n):
-        self.child=n
-        self.indexList=null #we don't keep this if this becomes a non-leaf entry
+    def setChild(self, n=None):
+        CFEntry.child=n
+        CFEntry.indexList=None #we don't keep this if this becomes a non-leaf entry
     
-    def setSubclusterID(self, id):
-        self.subclusterID=id
+    def setSubclusterID(id):
+        CFEntry.subclusterID=id
     
-    def getSubclusterID(self):
-        return self.subclusterID
+    def getSubclusterID():
+        return CFEntry.subclusterID
         
     def update(self, e):
         self.n += e.n
         
-        if self.sumX==null:
-            self.sumX=e.sumX.cloned()
+        if self.sumX==None:
+            self.sumX=e.sumX
         else:
-            for i in range(0, len(sumX)):
-                self.sumX[i] += e.sumX[i]
+            for i in CFEntry.sumX:
+                self.sumX += i
         
-        if self.sumX2==null:
-            self.sumX2=e.sumX2.cloned()
+        if self.sumX2==None:
+            self.sumX2=e.sumX2
         else:
-            for i in range(0, len(sumX2)):
-                self.sumX2[i] += e.sumX2[i]
+            for i in CFEntry.sumX2:
+                self.sumX2 += i
                 
         if not self.hasChild(): #we keep indexList only if we are at a leaf 
-            if self.indexList!=null and e.indexList!=null:
-                self.indexList.addAll(e.indexList)
-            elif self.indexList==null and e.indexList!=null:
-                self.indexList=e.indexList.cloned()
+            if self.indexList!=None and e.indexList!=None:
+                self.indexList.append(e.indexList)
+            elif self.indexList==None and e.indexList!=None:
+                self.indexList=e.indexList
         
     def addToChild(self, e):
         #add directly to the child node
-        self.child.getEntries().add(e)
+        self.child.getEntries().append(e)
 
         #boolean function
     def isWithinThreshold(self, e, threshold, distFunction):
         dist=distance(e, distFunction)
         
         if dist==0 or dist<=threshold: #read the comments in function
-            return true
+            return True
             
-        return false
+        return False
         
     #@param e
     #@return the distance between this entry and e
-    def distance(e, distFunction):
-        dist=Double.MAX_VALUE
+    def distance(self, e, distFunction):
+        dist=1000
         
         #switch case function
         if distFunction==CFTree.D0_DIST:
-            dist=d0(self, e)
+            dist=CFEntry.d0(self, e)
         elif distFunction==CFTree.D1_DIST:
-            dist=d1(self, e)
+            dist=CFEntry.d1(self, e)
         elif distFunction==CFTree.D2_DIST:
-            dist=d2(self, e)
+            dist=CFEntry.d2(self, e)
         elif distFunction==CFTree.D3_DIST:
-            dist=d3(self, e)
+            dist=CFEntry.d3(self, e)
         elif distFunction==CFTree.D4_DIST:
-            dist=d4(self, e)
+            dist=CFEntry.d4(self, e)
         
         return dist
     
     def d0(e1, e2):
         dist=0
-        for i in range(0, len(e1.sumX)):
-            diff=e1.sumX[i]/e1.n - e2.sumX[i]/e2.n
+        for i in range(len(e1.sumX)):
+            #print e1.sumX
+            #print e2.sumX
+            #print e1.n
+            #print e2.n
+        
+            diff=2#e1.sumX[i]/e1.n - e2.sumX[i]/e2.n
             dist += diff*diff
         
         if dist<0:
@@ -147,9 +155,9 @@ class CFEntry():
         
     def d1(e1, e2):
         dist=0
-        for i in range(0, len(e1.sumX)):
-                        diff=math.abs(e1.sumX[i]/e1.n - e2.sumX[i]/e2.n)
-                        dist += diff
+        for i in range(len(e1.sumX)):
+            diff=math.abs(e1.sumX[i]/e1.n - e2.sumX[i]/e2.n)
+            dist += diff
             
         if dist<0:
             print "d1<0!!!"
@@ -160,7 +168,7 @@ class CFEntry():
         dist=0
         n1=e1.n
         n2=e2.n
-        for i in range(0, len(e1.sumX)):
+        for i in range(len(e1.sumX)):
             diff=(n2*e1.sumX2[i] - 2*e1.sumX[i]*e2.sumX[i] + n1*e2.sumX2[i])/(n1 * n2)
             dist += diff
         
@@ -173,14 +181,14 @@ class CFEntry():
         dist=0
         n1=e1.n
         n2=e2.n
-        totSumX=e1.sumX.cloned()
-        totSumX2=e1.sumX2.cloned()
+        totSumX=e1.sumX
+        totSumX2=e1.sumX2
         
-        for i in range(0, len(e2.sumX)):
+        for i in range(len(e2.sumX)):
             totSumX[i] += e2.sumX[i]
             totSumX2[i] += e2.sumX2[i]
             
-        for i in range(0, len(totSumX)):
+        for i in range(len(totSumX)):
             diff = ((n1+n2)*totSumX2[i] - 2*totSumX[i]*totSumX[i] + (n1+n2)*totSumX2[i])/((n1+n2)*(n1+n2-1))
             dist+=diff
             
@@ -194,13 +202,13 @@ class CFEntry():
         
         n1 = e1.n
         n2 = e2.n
-        totSumX = e1.sumX.cloned()
-        totSumX2 = e1.sumX2.cloned()
+        totSumX = e1.sumX
+        totSumX2 = e1.sumX2
         for i in range(0, len(e2.sumX)):
             totSumX[i] += e2.sumX[i];
             totSumX2[i] += e2.sumX2[i];
                 
-        for i in range(0, len(totSumX)):
+        for i in range(len(totSumX)):
             diff1 = totSumX2[i] - 2*totSumX[i]*totSumX[i]/(n1+n2) + (n1+n2)*(totSumX[i]/(n1+n2))*(totSumX[i]/(n1+n2))
             diff2 = e1.sumX2[i] - 2*e1.sumX[i]*e1.sumX[i]/n1 + n1*(e1.sumX[i]/n1)*(e1.sumX[i]/n1)
             diff3 = e2.sumX2[i] - 2*e2.sumX[i]*e2.sumX[i]/n2 + n2*(e2.sumX[i]/n2)*(e2.sumX[i]/n2)
@@ -217,38 +225,39 @@ class CFEntry():
         e=o
         
         if self.n!=e.n:
-            return false
-        if self.child!=null and e.child==null:
-            return false
-        if self.child==null and e.child!=null:
-            return false
-        if self.child!=null  and  not self.child.equals(e.child):
-            return false
-        if self.indexList==null  and  e.indexList!=null:
-            return false
-        if self.indexList!=null  and  e.indexList==null:
-            return false
+            return False
+        if self.child!=None and e.child==None:
+            return False
+        if self.child==None and e.child!=None:
+            return False
+        if self.child!=None  and  not self.child.equals(e.child):
+            return False
+        if self.indexList==None  and  e.indexList!=None:
+            return False
+        if self.indexList!=None  and  e.indexList==None:
+            return False
         if not Arrays.equals(self.sumX, e.sumX):
-            return false
+            return False
         if not Arrays.equals(self.sumX2, e.sumX2):
-            return false
-        if self.indexList!=null  and  not self.indexList.equals(e.indexList):
-            return false
+            return False
+        if self.indexList!=None  and  not self.indexList.equals(e.indexList):
+            return False
         
-        return true
+        return True
         
     def toString(self):
         buff=""
         buff.append(" ")
 
     	
-        l = [x/self.n for x in self.sumX]
-        for i in range(len(sumX)):
-            buff.append(sum[i]/n +" ")
+        #l = [x/self.n for x in self.sumX]
+        #l.join(', ')
+        for i in range(len(CFEntry.sumX)):
+            buff.append(CFEntry.sumX[i]/CFEntry.n +" ")
             
         if self.indexList!=None:
             buff.append("( ")
-            for i in range():
+            for i in range(indexList):
                 buff.append(i+" ")
                 
             buff.append(")")
@@ -301,52 +310,52 @@ class CFEntryPair():
         
 class CFNode():
     __LINE_SEP='\\' #os.linesep()
-    entries=0 #stores the CFEntries for this node
+    entries=list() #stores the CFEntries for this node
     maxNodeEntries=0 #max number of entries per node(parameter B)
     distThreshold=0 #the distance threshold (parameter T), a.k.a. "radius"
     distFunction=0 #CFTree.D0_DIST #the distance function to use
-    leafStatus=0 #false #if true, this is a leaf
-    #nextLeaf=CFNode() #CFNode() #pointer to the next leaf (if not a leaf, pointer will be numm)
-    previousleaf=0 #CFNode() #pointer to the previous leaf (if not a leaf, pointer will be null)
-    applyMergingRefinement=0# false #if true, merging refinement will be applied after every split
+    leafStatus=False #false #if true, this is a leaf
+    nextLeaf=None #CFNode() #pointer to the next leaf (if not a leaf, pointer will be numm)
+    previousleaf=None #CFNode() #pointer to the previous leaf (if not a leaf, pointer will be None)
+    applyMergingRefinement=False# false #if true, merging refinement will be applied after every split
     
-    def __init__(self, maxNodeEntries=None, distThreshold=None, distFunction=None, applyMergingRefindment=None, leafStatus=None):
-        self.maxNodeEntries=maxNodeEntries
-        self.distThreshold=distThreshold
-        self.distFunction=distFunction
+    def __init__(self, maxNodeEntries=None, distThreshold=None, distFunction=None, applyMergingRefinement=None, leafStatus=None):
+        self.maxNodeEntries=CFNode.maxNodeEntries
+        self.distThreshold=CFNode.distThreshold
+        self.distFunction=CFNode.distFunction
         
         self.entries=list()
-        self.leafStatus=leafStatus
-        self.applyMergingRefindment=applyMergingRefindment
+        self.leafStatus=CFNode.leafStatus
+        self.applyMergingRefinement=CFNode.applyMergingRefinement
     
     #@return the number of CFEntries in the node
     def size():
-        return len(entries)
+        return len(CFNode.entries)
     
     #@return true if this is only a place-holder node for maintaining correct pointers in the list of leaves
-    def isDummy(self):
-        return bool((self.maxNodeEntries==0  and  self.distThreshold==0  and  self.size()==0  and  (self.previousLeaf!=None  or  self.nextLeaf!=None)))
+    def isDummy():
+        return bool((CFNode.maxNodeEntries==0  and  CFNode.distThreshold==0  and  CFNode.size()==0  and  (CFNode.previousLeaf!=None  or  CFNode.nextLeaf!=None)))
     
     #@return the max number of entries the node can host (parameter B)
     def getMaxNodeEntries(self):
-        return self.maxNodeEntries
+        return CFNode.maxNodeEntries
         
     #@return the distance threshold used to decide whether a CFEntry can absorb a new entry
     def getDistThreshold(self):
-        return self.distThreshold
+        return CFNode.distThreshold
         
     def getDistFunction(self):
-        return self.distFunction
+        return CFNode.distFunction
         
     def getNextLeaf(self):
-        self.nextLeaf=CFNode()
-        return self.nextLeaf
+        #self.nextLeaf=CFNode()
+        return CFNode.nextLeaf
         
     def getPreviousLeaf(self):
-        return self.previousLeaf
+        return CFNode.previousLeaf
         
     def addToEntryList(self, e):
-        self.entries.add(e)
+        self.entries.append(e)
         
     def getEntries(self):
         return self.entries
@@ -356,7 +365,7 @@ class CFNode():
     #@return a positive integer, if the leaf entries were enumerated
     def mapToClosetSubcluster(e):
         closest=CFEntry()
-        closest=findClosestEntry(e)
+        closest=self.findClosestEntry(e)
         if not closest.hasChild():
             return closest.getSubclusterID()
         
@@ -366,16 +375,16 @@ class CFNode():
     #@param e the entry to be inserted
     #@return TRUE if the new entry could be inserted without problems, otherwise we need to split the node
     def insertEntry(self, e):
-        if len(self.entries)==0: #if the node is empty we can insert the entry directly here
-            self.entries.append(e)
+        if sys.getsizeof(CFNode.entries)==0: #if the node is empty we can insert the entry directly here
+            CFNode.entries.append(e)
             return True #insert was successful, no split necessary
             
         closest=CFEntry()
-        cloest=findCloestEntry(e)
+        cloest=self.findClosestEntry(e)
         
-        dontSplit=false
+        dontSplit=False
         if closest.hasChild(): # if closest has a child we go down with a recursive call
-            dontSplit=closest.getChild().insertEntry(e)
+            #dontSplit=closest.getChild().insertEntry(e)
             if dontSplit:
                 closest.update(e) #this updates the CF to reflect the additional entry
                 return True
@@ -383,52 +392,52 @@ class CFNode():
                 #if the node below/closest/didn't have enough room to host the new entry
                 #we need to split it
                 splitPair=CFEntryPair()
-                splitPair=splitEntry(closest)
+                splitPair=self.splitEntry(closest)
                 
                 #after adding the new entries derived from splitting /closest/ to this node,
                 #if we have more than maxEntries we return false,
                 #so that the parent node will be split as well to redistribute the "load"
-                if entries.size()>maxNodeEntries:
+                if sys.getsizeof(CFNode.entries)>CFNode.maxNodeEntries:
                     return False
                 else: #splitting stops at this node
-                    if applyMergingRefindment:
+                    if CFNode.applyMergingRefinement:
                         mergingRefinement(splitPair) #perform step 4 of insert process (see BIRCH paper, Section 4.3)
                         
                     return True
         
-        elif closet.isWithinThreshold(e, distThreshold, distFunction):
+        elif closet.isWithinThreshold(e, CFNode.distThreshold, CFNode.distFunction):
             #if  dist(closest,e) <= T, /e/ will be "absorbed" by /closest/
             closest.update(e)
             return True #no split necessary at the parent level
             
-        elif entries.size()<maxNodeEntries:
+        elif sys.getsizeof(CFNode.entries)<CFNode.maxNodeEntries:
             #if /closest/ does not have children, and dist(closest,e) > T
             #if there is enough room in this node, we simply add e to it
-            entries.add(e)
+            entries.append(e)
             return True #no split necessary at the parent level
             
         else: #not enough space on this node
-            entries.add(e) #adds it momentarily to this node
+            entries.append(e) #adds it momentarily to this node
             return False #returns false so that the parent entry will be split
             
     
     #@param closest the entry to be split
     #@return the new entries derived from splitting
-    def splitEntry(closest):
+    def splitEntry(self, closest):
         #if there was a child, but we could not insert the new entry without problems THAN
         #split the child of closest entry
         oldNode=CFNode()
         oldNode=closest.getChild()
         oldEntries=closest.getChild().getEntries()
         p=CFEntryPair()
-        p=findFarthestEntryPair(oldEntries)
+        p=self.findFarthestEntryPair(oldEntries)
         
         newEntry1=CFEntry()
-        newNode1=CFNode(maxNodeEntries, distThreshold, distFunction, applyMergingRefindment, oldNode.isLeaf())
+        newNode1=CFNode(CFNode.maxNodeEntries, CFNode.distThreshold, CFNode.distFunction, CFNode.applyMergingRefinement, oldNode.isLeaf())
         newEntry1.setChild(newNode1)
         
         newEntry2=CFEntry()
-        newNode2=CFNode(maxNodeEntries, distThreshold, distFunction, applyMergingRefindment, oldNode.isLeaf())
+        newNode2=CFNode(CFNode.maxNodeEntries, CFNode.distThreshold, CFNode.distFunction, CFNode.applyMergingRefinement, oldNode.isLeaf())
         newEntry2.setChild(newNode2)
         
         if oldNode.isLeaf(): #we do this to preserve the pointers in the leafList
@@ -437,10 +446,10 @@ class CFNode():
             nextL=CFNode()
             nextL=oldNode.getNextLeaf()
             
-            if prevL!=null:
+            if prevL!=None:
                 prevL.setNextLeaf(newNode1)
                 
-            if nextL!=null:
+            if nextL!=None:
                 nextL.setPreviousLeaf(newNode2)
                 
             newNode1.setPreviousLeaf(prevL)
@@ -448,13 +457,13 @@ class CFNode():
             newNode2.setPreviousLeaf(newNode1)
             newNode2.setNextLeaf(nextL)
             
-        redistributeEntries(oldEntries, p, newEntry1, newEntry2)
+        self.redistributeEntries(oldEntries, p, newEntry1, newEntry2)
         #redistributes the entries in n between newEntry1 and newEntry2
         #according to the distance to p.e1 and p.e2
         
-        entries.remove(closest) # this will be substitute by two new entries
-        entries.add(newEntry1)
-        entries.add(newEntry2)
+        #CFNode.entries.remove(closest) # this will be substitute by two new entries
+        CFNode.entries.append(newEntry1)
+        CFNode.entries.append(newEntry2)
         
         newPair=CFEntryPair(newEntry1, newEntry2)
         
@@ -465,11 +474,13 @@ class CFNode():
     #@param farEntries
     #@param newE1
     #@param newE2
-    def redistributeEntries(oldEntries, farEntries, newE1, newE2):
+    def redistributeEntries(self, oldEntries, farEntries, newE1, newE2):
         e=CFEntry()
-        for e in range(oldEntries):
-            dist1=farEntries.e1.distance(e, distFunction)
-            dist2=farEntries.e2.distance(e, distFunction)
+        #print newE1, newE2
+        for e in oldEntries:
+            #print e
+            dist1=farEntries.e1.distance(e, CFNode.distFunction)
+            dist2=farEntries.e2.distance(e, CFNode.distFunction)
             
             if dist1<=dist2:
                 newE1.addToChild(e)
@@ -484,25 +495,25 @@ class CFNode():
     #@param cloePair
     #@param e1
     #@param e2
-    def redistributeEntries(oldEntries1, oldEntries2, closeEntries, newE1, newE2):
+    def redistributeEntries1(self, oldEntries1, oldEntries2, closeEntries, newE1, newE2):
         v=list()
-        v.addAll(oldEntries1)
-        v.addAll(oldEntries2)
+        v.append(oldEntries1)
+        v.append(oldEntries2)
         
         e=CFEntry()
         for e in range(len(v)):
-            dist1=closeEntries.e1.distance(e, distFunction)
-            dist2=closeEntries.e2.distance(e, distFunction)
+            dist1=closeEntries.e1.distance(e, CFNode.distFunction)
+            dist2=closeEntries.e2.distance(e, CFNode.distFunction)
             
             if dist1<=dist2:
-                if newE1.getChildSize()<maxNodeEntries:
+                if newE1.getChildSize()<CFNode.maxNodeEntries:
                     newE1.addToChild(e)
                     newE1.update(e)
                 else:
                     newE2.addToChild(e)
                     newE2.update(e)
             elif dist2<dist1:
-                if newE2.getChildSize()<maxNodeEntries:
+                if newE2.getChildSize()<CFNode.maxNodeEntries:
                     newE2.addToChild(e)
                     newE2.update(e)
                 else:
@@ -515,10 +526,10 @@ class CFNode():
     #@param cloePair
     #@param e1
     #@param e2
-    def redistributeEntries(oldEntries1, oldEntries2, newE):
+    def redistributeEntries2(self, oldEntries1, oldEntries2, newE):
         v=list()
-        v.addAll(oldEntries1)
-        v.allAll(oldEntries2)
+        v.append(oldEntries1)
+        v.append(oldEntries2)
         
         e=CFEntries()
         for e in range(len(v)):
@@ -527,51 +538,53 @@ class CFNode():
             
     #@param e a CFEntry
     #@return the entry in this node that is closest to e 
-    def findClosestEntry(e):
-        minDist=Double.MAX_VALUE
+    def findClosestEntry(self, e):
+        minDist=1000
         closest=CFEntry()
-        c=CFEntry()
-        for c in range(entries):
-            d=c.distance(e, distFunction)
+        #c=CFEntry()
+        for c in CFNode.entries:
+            d=c.distance(e, CFNode.distFunction)
+            
             if d< minDist:
                 minDist=d
                 closest=c
             
         return closest
         
-    def findFarthestEntryPair(entries):
-        if entries.size()<2:
-            return null
+    def findFarthestEntryPair(self, entries):
+        if len(entries)<2:
+            return None
         maxDist=-1
         p=CFEntryPair()
         
-        for i in range(0, entries.size()-1):
-            for j in range(i+1, entries.size()):
+        for i in range(len(entries)):
+            for j in range(i+1, len(entries)):
                 e1=CFEntry()
                 e2=CFEntry()
-                e1=entries.get(i)
-                e2=entries.get(j)
                 
-                dist=e1.distance(e2, distFunction)
+                e1=entries[i]
+                e2=entries[j]
+                
+                dist=e1.distance(e2, CFNode.distFunction)
                 if dist>maxDist:
                     p.e1=e1
                     p.e2=e2
                     maxDist=dist
         return p
         
-    def findClosestEntryPair(entries):
-        if entries.size()<2:
-            return null
-        minDist=Double.MAX_VALUE
+    def findClosestEntryPair(self, entries):
+        if len(entries)<2:
+            return None
+        minDist=1000
         p=CFEntryPair()
-        for i in range(0, entries.size()-1):
-            for j in range(i+1, entries.size()):
+        for i in range(len(entries)-1):
+            for j in range(i+1, len(entries)):
                 e1=CFEntry()
                 e2=CFEntry()
                 e1=entries.get(i)
                 e2=entries.get(j)
                 
-                dist=e1.distance(e2, distFunction)
+                dist=e1.distance(e2, CFNode.distFunction)
                 if dist<minDist:
                     p.e1=e1
                     p.e2=e2
@@ -583,9 +596,10 @@ class CFNode():
     #@param newE1
     #@param newE2
     def replaceClosestPairWithNewEntries(self, p, newE1, newE2):
-        for i in range(0, self.entries.size()):
+        for i in range(len(self.entries)):
             if self.entries.get(i).equals(p.e1):
                 self.entries.set(i, newE1)
+                
             elif self.entries.get(i).equals(p.e2):
                 self.entries.set(i, newE2)
     
@@ -593,7 +607,7 @@ class CFNode():
     #@param p
     #@param newE
     def replaceClosestPairWithNewEntries(self, p, newE):
-        for i in range(0, self.entries.size()):
+        for i in range(len(self.entries)):
             if self.entries.get(i).equals(p.e1):
                 self.entries.set(i, newE)
             elif self.entries.get(i).equals(p.e2):
@@ -605,7 +619,7 @@ class CFNode():
         p=CFEntryPair()
         p=findClosestEntryPair(nodeEntries)
         
-        if p==null: #not possible to find a valid pair
+        if p==None: #not possible to find a valid pair
             return
         if p.equals(splitEntries): #if the closest pair is the one that was just split, we terminate
             return
@@ -622,7 +636,7 @@ class CFNode():
             print "ERROR: Nodes at the same level must have same leaf status" 
             exit()
             
-        if (oldNode1Entries.size()+oldNode2Entries.size())>maxNodeEntries:
+        if (len(oldNode1Entries)+len(oldNode2Entries))>CFNode.maxNodeEntries:
             #the two nodes cannot be merged into one (they will not fit)
             # in this case we simply redistribute them between p.e1 and p.e2
             newEntry1=CFEntry()
@@ -640,7 +654,7 @@ class CFNode():
             newNode2.resetEntries()
             newEntry2.setChild(newNode2)
             
-            redistributeEntries(oldNodeEntries, oldNode2Entries, p, newEntry1, newEntry2)
+            redistributeEntries1(oldNodeEntries, oldNode2Entries, p, newEntry1, newEntry2)
             replaceClosestPairWithNewEntries(p, newEntry1, newEntry2)
         else:
             #if the two closest entries can actually be merged into one single entry
@@ -648,24 +662,24 @@ class CFNode():
             #note:in the CFNode construction below the last parameter is false
             #because a split cannot happen at the leaf level
             #(the only exception is when the root is first split, but that's treated separately)
-            newNode=CFNode(maxNodeEntries, distThreshold, distFunction, applyMergingRefindment, oldNode1.isLeaf())
+            newNode=CFNode(CFNode.maxNodeEntries, CFNode.distThreshold, CFNode.distFunction, CFNode.applyMergingRefinement, oldNode1.isLeaf())
             
-            redistributeEntries(oldNode1Entries, oldNode2Entries, newEntry)
+            redistributeEntries2(oldNode1Entries, oldNode2Entries, newEntry)
             
             if oldNode1.isLeaf()  and  oldNode2.isLeaf():
-                if oldNode1.getPreviousLeaf()!=null:
+                if oldNode1.getPreviousLeaf()!=None:
                     oldNode1.getPreviousLeaf().setNextLeaf(newNode)
-                if oldNode1.getNextLeaf!=null:
+                if oldNode1.getNextLeaf!=None:
                     oldNode1.getNextLeaf().setPreviousLeaf(newNode)
                 newNode.setPreviousLeaf(oldNode1.getPreviousLeaf())
                 newNode.setNextLeaf(oldNode1.getNextLeaf())
                 
                 #this is a dummy node that is only used to maintain proper links in the leafList
                 #no CFEntry will ever point to this leaf
-                dummy=CFNode(0, 0, 0, false, true)
-                if oldNode2.getPreviousLeaf()!=null:
+                dummy=CFNode(0, 0, 0, False, True)
+                if oldNode2.getPreviousLeaf()!=None:
                     oldNode2.getPreviousLeaf().setNextLeaf(dummy)
-                if oldNode2.getNextLeaf()!=null:
+                if oldNode2.getNextLeaf()!=None:
                     oldNode2.getNextLeaf().setPreviousLeaf(dummy)
                 dummy.setPreviousLeaf(oldNode2.getPreviousLeaf())
                 dummy.setNextLeaf(oldNode2.getNextLeaf())
@@ -700,7 +714,7 @@ class CFNode():
     def countChildrenNodes(self):
         n=0
         e=CFEntry()
-        for n in range(len(self.entries)):
+        for e in self.entries:
             if e.hasChild():
                 n +=1
                 n += e.getChild().countChildrenNodes()
@@ -709,9 +723,12 @@ class CFNode():
     def countEntriesInChildrenNodes(self):
         n=0
         e=CFEntry()
-        for e in range(len(self.entries)):
+        for e in self.entries:
             if e.hasChild():
-                n += e.getChild().size()
+                #print len(e.getChild())
+                #print sys.getsizeof(e.getChild())
+                print str(e.getChild())
+                n += len(str(e.getChild()))
                 n += e.getChild().countChildrenNodes()
         
         return n
@@ -722,10 +739,10 @@ class CFNode():
         buff.append("==============================================" + LINE_SEP)
         if self.isLeaf():
             buff.append(">>> THIS IS A LEAF " + LINE_SEP)
-        buff.append("Num of Entries = " + entries.size() + LINE_SEP)
+        buff.append("Num of Entries = " + len(entries) + LINE_SEP)
         buff.append("{")
         e=CFEntry()
-        for e in range(entries):
+        for e in range(len(entries)):
             buff.append("[" + e + "]")
         
         buff.append("}" + LINE_SEP)
@@ -770,9 +787,9 @@ class CFTree():
         if distFunction<CFTree.D0_DIST or distFunction>CFTree.D4_DIST:
             distFunction=CFTree.D0_DIST
         
-        self.root=CFNode(maxNodeEntries, distThreshold, distFunction, applyMergingRefinement, True)
-        self.leafListStart=CFNode(0, 0, distFunction, applyMergingRefinement, True) #this is a dummy node that points to the first leaf
-        self.leafListStart.setNextLeaf(self.root) #at this point root is the only node and therefore also the only leaf
+        CFTree.root=CFNode(maxNodeEntries, distThreshold, distFunction, applyMergingRefinement, True)
+        CFTree.leafListStart=CFNode(0, 0, distFunction, applyMergingRefinement, True) #this is a dummy node that points to the first leaf
+        CFTree.leafListStart.setNextLeaf(CFTree.root) #at this point root is the only node and therefore also the only leaf
         
     #@return the current memory limit used to trigger automatic rebuilding
     def getMemoryLimit():
@@ -803,11 +820,11 @@ class CFTree():
     #@param x the pattern vector to be inserted in the tree
     #@return true if insertion was successful
     def insertEntry(self, x):
-        self.instanceIndex += 1
-        if self.automaticRebuild  and  (self.instanceIndex%self.periodMemLimitCheck)==0:
+        CFTree.instanceIndex += 1
+        if CFTree.automaticRebuild  and  (CFTree.instanceIndex%self.periodMemLimitCheck)==0:
             #rebuilds the tree if we reached or exceeded memory limit
             rebuildIfAboveMemLimit()
-        return bool(self.insertEntry2(x, self.instanceIndex))
+        return bool(self.insertEntry2(x, CFTree.instanceIndex))
         
     #Insert a pattern over with a specific associated pattern vector index
     #This method does not use periodic memory limit checks
@@ -823,13 +840,13 @@ class CFTree():
     #@param e the CFEntry to insert
     #@return true if insertion happened without problems
     def insertEntry3(self, e):
-        dontSplit=self.root.insertEntry(e)
+        dontSplit=CFTree.root.insertEntry(e)
         if not dontSplit:
             #if dontSplit is false, it means there was not enough space to insert the new entry in the tree
             #therefore we need to split the root to make more room
-            splitRoot()
+            self.splitRoot()
             
-            if automaticRebuild:
+            if CFTree.automaticRebuild:
                 #rebuilds the tree if we reached or exceeded memory limits
                 rebuildIfAboveMemLimit()
             
@@ -852,47 +869,47 @@ class CFTree():
     #@return true if rebuilt    
     def rebuildIfAboveMemLimit(self):
         if hasReachedMemoryLimit(self, memLimit):
-            newThreshold=computeNewThreshold(leafListStart, root.getDistFunction(), root.getDistThreshold())
+            newThreshold=computeNewThreshold(CFTree.leafListStart, CFTree.root.getDistFunction(), CFTree.root.getDistThreshold())
             newTree=CFTree()
-            newTree=self.rebuildTree(root.getMaxNodeEntries(), newThreshold, root.getDistFunction(), root.applyMergingRefinement, false)
+            newTree=self.rebuildTree(CFTree.root.getMaxNodeEntries(), newThreshold, CFTree.root.getDistFunction(), CFTree.root.applyMergingRefinement, False)
             copyTree(newTree)
             
             return True
         return False
         
     #Splits the root to accommodate a new entry. The height of the tree grows by one
-    def splitRoot():
+    def splitRoot(self):
         #the split happens by finding the two entries in this node that are the most far apart
         #we then use these two entries as a "pivot" to redistribute the old entries 
         p=CFEntryPair()
-        p=self.root.findFarthestEntryPair(self.root.getEntries())
+        p=CFTree.root.findFarthestEntryPair(CFTree.root.getEntries())
         
         newEntry1=CFEntry()
-        newNode1=CFNode(self.root.getMaxNodeEntries(), self.root.getDistThreshold, self.root.getDistFunction, self.root.applyMergingRefinement, self.root.isLeaf())
+        newNode1=CFNode(CFTree.root.getMaxNodeEntries(), CFTree.root.getDistThreshold, CFTree.root.getDistFunction, CFTree.root.applyMergingRefinement, CFTree.root.isLeaf())
         newEntry1.setChild(newNode1)
         
         newEntry2=CFEntry()
-        newNode2=CFNode(self.root.getMaxNodeEntries(), self.root.getDistThreshold, self.root.getDistFunction, self.root.applyMergingRefinement, self.root.isLeaf())
+        newNode2=CFNode(CFTree.root.getMaxNodeEntries(), CFTree.root.getDistThreshold, CFTree.root.getDistFunction, CFTree.root.applyMergingRefinement, CFTree.root.isLeaf())
         newEntry2.setChild(newNode2)
         
         #the new root that hosts the new entries
-        newRoot=CFNode(self.root.getMaxNodeEntries, self.root.getDistThreshold, self.root.getDistFunction, self.root.applyMergingRefinement, false)
+        newRoot=CFNode(CFTree.root.getMaxNodeEntries, CFTree.root.getDistThreshold, CFTree.root.getDistFunction, CFTree.root.applyMergingRefinement, False)
         newRoot.addToEntryList(newEntry1)
         newRoot.addToEntryList(newEntry2)
         
         #this updates the pointers to the list of leaves
-        if self.root.isLeaf(): #if root was a leaf
-                self.leafListStart.setNextLeaf(newNode1)
-                newNode1.setPreviousLeaf(leafListStart)
+        if CFTree.root.isLeaf(): #if root was a leaf
+                CFTree.leafListStart.setNextLeaf(newNode1)
+                newNode1.setPreviousLeaf(CFTree.leafListStart)
                 newNode1.setNextLeaf(newNode2)
                 newNode2.setPreviousLeaf(newNode1)
             
         #redistributes the entries in the root between newEntry1 and newEntry2
         #according to the distance to p.e1 and p.e2
-        self.root.redistributeEntries(self.root.getEntries(), p, newEntry1, newEntry2)
+        CFTree.root.redistributeEntries(CFTree.root.getEntries(), p, newEntry1, newEntry2)
         
         #updates the root
-        self.root=newRoot
+        CFTree.root=newRoot
         
         #frees some memory by deleting the nodes in the tree that had to be split
         gc.collect()
@@ -908,17 +925,17 @@ class CFTree():
     #@param distFunction
     #@param currentThreshold
     #@param the new threshold
-    def computeNewThreshold(leafListStart, distFunction, currentThreshold):
+    def computeNewThreshold(self, leafListStart, distFunction, currentThreshold):
         avgDist=0
         n=0
         
         l=CFNode()
         l=leafListStart.getNextLeaf()
-        while l!=null:
+        while l!=None:
             if not l.isDummy():
                 p=CFEntryPair()
                 p=l.findClosestEntryPair(l.getEntries())
-                if p!=null:
+                if p!=None:
                     avgDist += p.e1.distance(p.e2, distFunction)
                     n +=1
                     
@@ -949,7 +966,7 @@ class CFTree():
     #@return memory usage in bytes
     def computeMemorySize(t):
         memSize=0
-        memSize=Sizeof.iterativeSizeof(t)
+        memSize=sys.getsizeof(t)
         
         return memSize
         
@@ -993,15 +1010,15 @@ class CFTree():
         oldLeavesList=self.leafListStart.getNextLeaf() #the node self.leafListStart is a dummy node
         
         if discardOldTree:
-            self.root=null
+            self.root=None
             gc.collect() #removes the old tree, only the old leaves will be kept
         
         leaf=CFNode()
         leaf=oldLeavesList
         e=CFEntry()
-        while leaf!=null:
+        while leaf!=None:
             if not leaf.isDummy():
-                for e in range(leaf.getEntries):
+                for e in range(len(leaf.getEntries)):
                     newE=CFEntry()
                     newE=e
                     if not discardOldTree: #make a deep copy
@@ -1012,19 +1029,19 @@ class CFTree():
             leaf=leaf.getNextLeaf()
         
         if discardOldTree:
-            self.leafListStart=null
+            self.leafListStart=None
             gc.collect() #removes the old list of leaves
             
         return newTree
         
     #@return a list of subcluster, and for each subcluster a list of pattern vector indexes that belong to it
-    def getSubclusterMembers():
+    def getSubclusterMembers(self):
         membersList=list()
         
         l=CFNode()
-        l=self.leafListStart.getNextLeaf() #the first leaf is dummy
+        l=CFTree.leafListStart.getNextLeaf() #the first leaf is dummy
         e=CFEntry()
-        while l!=null:
+        while l!=None:
             if not l.isDummy():
                 for e in range(l.getEntries()):
                     membersList.append(e.getIndexList())
@@ -1040,7 +1057,7 @@ class CFTree():
         
         id=0
         e=CFEntry()
-        while l!=null:
+        while l!=None:
             if not l.isDummy():
                 for e in range(l.getEntries()):
                     id +=1
@@ -1052,17 +1069,17 @@ class CFTree():
     #@return a positive integer, if the leaf entries were enumerated using finishedInsertingData(), otherwise -1
     def mapToClosetSubcluster(x):
         e=CFEntry(x)
-        return self.root.mapToClosetSubcluster(e)
+        return CFTree.root.mapToClosetSubcluster(e)
         
     #Computes an estimate of the cost of running an o(n^2) algorithm to split each subcluster in more fine-grained clusters
     #@return sqrt(sum_i[(n_i)^2]), where n_i is the number of members of the i-th subcluster
-    def computeSumLambdaSquared():
+    def computeSumLambdaSquared(self):
         lambdaSS=0
         
         l=CFNode()
-        l=self.leafListStart.getNextLeaf()
+        l=CFTree.leafListStart.getNextLeaf()
         e=CFEntry()
-        while l!=null:
+        while l!=None:
             if not l.isDummy():
                 for e in range(l.getEntries()):
                     lambdaSS += math.pow(len(e.getIndexList()), 2)
@@ -1072,13 +1089,13 @@ class CFTree():
         
     #prints the CFTree
     def printCFTree(self):
-        print self.root
+        print CFTree.root
         
     #counts the nodes of the tree (including leaves)
     #@return the number of nodes in the tree
     def countNodes(self):
         n=1 #at least root has to be present
-        n += self.root.countChildrenNodes()
+        n += CFTree.root.countChildrenNodes()
         
         return n
         
@@ -1092,7 +1109,7 @@ class CFTree():
         
     #counts the number of leaf entries (i.e. the number of sub-clusters in the tree)
     #@return the number of leaf entries (i.e. the number of sub-clusters)
-    def countLeafEntries():
+    def countLeafEntries(self):
         i=0
         l=CFNode()
         l=self.leafListStart.getNextLeaf()
@@ -1106,14 +1123,14 @@ class CFTree():
         
     #prints the index of all the pattern vectors that fall into the leaf nodes
     #This is only useful for debugging purposes
-    def printLeafIndexes():
+    def printLeafIndexes(self):
         indexes=list()
         l=CFNode()
         l=self.leafListStart.getNextLeaf()
         e=CFEntry()
-        while l!=null:
+        while l!=None:
             if not l.isDummy():
-                print(l)
+                print l
                 for e in range(l.getEntries()):
                     indexes.append(e.getIndexList())
             l=l.getNextLeaf()
@@ -1135,8 +1152,9 @@ class CFTree():
                     i=i+1
                     print "[[%d]]" %i
                     v=np.array(e.getIndexList())
-                    sorted(v)
-                    print str(v)
+                    #sorted(v)
+                    #print str(v)
+                    print v
                     
             l=l.getNextLeaf()
             
@@ -1152,23 +1170,26 @@ if __name__ == '__main__':
     birchTree = CFTree(maxNodeEntries,distThreshold,CFTree.D0_DIST,applyMergingRefinement)
     birchTree.setMemoryLimit(100*1024*1024)
         
-    input = open("KL20.txt")
+    input = open("test.txt")
         
-    line = ''
+    #line = ''
 
     #pdb.set_trace()
-    #while (line == input.readline())!=None:
-    line == input.readline()
-    tmp = line.split(",")
-                
-    x = [len(tmp)]
-    for i in range(0, len(x)):
-        x[i] = tmp[i]
-                
-        inserted = birchTree.insertEntry(x)
-        if not inserted:
-            print("NOT INSERTED!")
-            #exit()
+    while input.readline():
+        #line = input.readline()
+        #print input.readline()
+        tmp = input.readline().split(",")
+        #print tmp
+                    
+        #x = []
+        #print x
+        for i in range(len(tmp)):
+           x=tmp[i]
+           #print tmp[i]
+           inserted = birchTree.insertEntry(x)
+           if not inserted:
+                print("NOT INSERTED!")
+                #exit()
         
     
     print("*************************************************")
@@ -1178,10 +1199,10 @@ if __name__ == '__main__':
     print("*************************************************")
     
     print("****************** LEAVES *******************")
-    #birchTree.printLeafEntries()
+    birchTree.printLeafEntries()
     print("****************** END *******************")
     #print("****************** INDEXES *******************")
-    # birchTree.printLeafIndexes()
+    #birchTree.printLeafIndexes()
     #print("****************** END *******************")
     print "Total CF-Nodes = %d" %birchTree.countNodes()
     print "Total CF-Entries = %d" %birchTree.countEntries()
@@ -1199,7 +1220,7 @@ if __name__ == '__main__':
         
         print "new Threshold [%d] = %d" %(i, newThreshold)
         
-        newTree = oldTree.rebuildTree(maxNodeEntries, newThreshold, distFunction, true, false)
+        newTree = oldTree.rebuildTree(maxNodeEntries, newThreshold, distFunction, True, False)
         print "Total CF-Nodes in new Tree[%d] = %d" %(i, newTree.countNodes())
         print "Total CF-Entries in new Tree[%d] = %d"%(i, newTree.countEntries())
         print "Total CF-Leaf_Entries in new Tree[%d] = %d"%(i, newTree.countLeafEntries())
